@@ -48,7 +48,11 @@ The command has default settings for the plot. One can change them through lopt(
 
 {phang2}{cmd:. gen lnpgdp=ln(pgdp)}{p_end}
 
-{phang2}{cmd:. pfilter lnpgdp, id(country) time(year) method(hp) trend(lnpgdp2) smooth(400)}{p_end}
+{phang2}{cmd:. egen id=group(country)}{p_end}
+
+{phang2}{cmd:. xtset id year}{p_end}
+
+{phang2}{cmd:. pfilter lnpgdp, method(hp) trend(lnpgdp2) smooth(400)}{p_end}
 
 {phang2}{cmd:. rtranpath lnpgdp2, id(country) time(year) over(group) against(bench)}{p_end}
 

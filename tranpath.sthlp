@@ -53,7 +53,11 @@ Additionally, legend is off and added texts is used to identified the exceptions
 
 {phang2}{cmd:. gen lnpgdp=ln(pgdp)}{p_end}
 
-{phang2}{cmd:. pfilter lnpgdp, id(country) time(year) method(hp) trend(lnpgdp2) smooth(400)}{p_end}
+{phang2}{cmd:. egen id=group(country)}{p_end}
+
+{phang2}{cmd:. xtset id year}{p_end}
+
+{phang2}{cmd:. pfilter lnpgdp,  method(hp) trend(lnpgdp2) smooth(400)}{p_end}
 
 {phang2}{cmd:. tranpath lnpgdp2, id(country) time(year) gen(v1)}{p_end}
 
