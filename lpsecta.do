@@ -57,7 +57,7 @@ mata clear
 		 res=_reglogt(XX[rpid,2..cols(XX)],kq)
 		 tstat=_getts(res)[1,1]
 		// check if the remainders form a convergent club
-		if (tstat>-1.65) {
+		if (tstat>-1.65 & tstat!=.) {
 			pid=_posmatch(id2,remainder)
 			club[pid,1]=J(length(pid),1,2)
 			st_view(tempclub=.,.,_club)
@@ -91,7 +91,7 @@ mata clear
 						res=_reglogt(XX[rpid,2..cols(XX)],kq)
 						tstat=_getts(res)[1,1]
 						
-						if (tstat>-1.65) {
+						if (tstat>-1.65 & tstat!=.) {
 							pid=_posmatch(id2,remainder)
 							club[pid,1]=J(length(pid),1,jt+1)
 							st_view(tempclub=.,.,_club)
@@ -169,6 +169,12 @@ function _findclub(real matrix x, // x should be arranged as: the first collum i
 	 }
 	 
    // If step 2.1 fails, no convergent club exists.	 
+	if (tt==.){
+	    
+	    return(clubmember)
+		exit()
+	 }
+
 	if (k>=N & tt<=-1.65){
 	    
 	    return(clubmember)
@@ -184,8 +190,10 @@ function _findclub(real matrix x, // x should be arranged as: the first collum i
 		 while (j<=N & tt>-1.65){
 			 res=_reglogt(x2[(k-1)..j,.],kq)
 			 tt=_getts(res)[1,1]
+			 if(tt==.){
+			 	break
+			 }
 			 tmat[j,.]=tt,j
-			 
 			 j=j+1
 			 }
 		 jtmax=-sort(-tmat,1)[1,2]
@@ -200,7 +208,7 @@ function _findclub(real matrix x, // x should be arranged as: the first collum i
 			  zflag=_posmatch(id,idlist)
 			  res=_reglogt(x2[zflag,.],kq)
 			  tt=_getts(res)[1,1]
-			  if (tt>cr) iniclub=iniclub \ cin1[j,1]
+			  if (tt>cr&tt!=.) iniclub=iniclub \ cin1[j,1]
 		 
 		      }
            // check the club formed in Step 3.2 is convergent
@@ -225,7 +233,7 @@ function _findclub(real matrix x, // x should be arranged as: the first collum i
 						   zflag=_posmatch(id,idlist)
 						   res=_reglogt(x2[zflag,.],kq)
 						   tt=_getts(res)[1,1]
-						   if (tt>cr) iniclub=iniclub \ cin1[j,1]
+						   if (tt>cr & tt!=.) iniclub=iniclub \ cin1[j,1]
 						   }
 					   zflag=_posmatch(id,iniclub)
 					   res=_reglogt(x2[zflag,.],kq)

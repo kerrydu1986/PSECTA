@@ -1,12 +1,13 @@
-*! Version 4.1
+*! Version 4.1.1
 *revised at 2017-5-17 
 *revised at 2017-6-2 
+*revised at 20178-9-11 
 *By Kerui Du, kerrydu@sdu.edu.cn
 
 capture program drop imergeclub
 program define imergeclub, eclass prop(xt)
 	syntax varname, ///
-	club(varname) kq(numlist max=1) [name(varname str) Gen(str) IMORE MDiv NOMata NOPRTlogtreg]
+	club(varname) kq(numlist max=1) [name(varname) Gen(str) IMORE MDiv NOMata NOPRTlogtreg]
 
     local cmdline `0'
  	_xt, trequired 

@@ -1,3 +1,4 @@
+* revised at 2018-9-11
 * revised at 2017-10-27
 * revised at 2017-6-18
 * revised at 2017-6-1
@@ -21,19 +22,37 @@ program define psecta, eclass prop(xt)
 		error 121
 	}
 
-	_xt, trequired 
-	local id=r(ivar)
-	local time=r(tvar)
+	//_xt, trequired 
+	//local id=r(ivar)
+	//local time=r(tvar)
+	qui xtset
+	local id= r(panelvar)
+	local time=r(timevar)
+	if (r(balanced)!="strongly balanced"){
+		di as green `" Note: The unbalanced panel data is temporarily rectangularized by {{bf:tsfill,full}}"'
+	}
 
+	tempvar dataflag
+	qui gen `dataflag'=1
+	qui tsfill, full
 	
 	if ("`noprtlogtreg'"!="") local prt="qui"
 	qui tab `id', nofreq
 	local Ncross=r(r)
 	if (`Ncross'==1){
-	   disp as red "Error:The number of individuals should be greater than one!"
+	   disp as error "The number of individuals should be greater than one!"
 	   error 2000
 	   //exit
 	}
+	su `time', meanonly
+	local mint=r(min)
+	qui count if `time'==`mint'& !missing(`varlist')
+	if (r(N)!=`Ncross'){
+		di as error "Observations at the starting period must not be missing."
+		qui keep if `dataflag'==1
+		exit
+	}
+	
 
 	tempvar _club tempid
 
@@ -59,6 +78,8 @@ program define psecta, eclass prop(xt)
 	}
 
 	//disp "`vgetcluster'"
+	//tempname rclub cid
+	//qui egen `cid'=group(`id')
 	tempname rclub
 	 `vgetcluster' `varlist', id(`id') time(`time') gen(`_club') kq(`kq') fr(`fr') cr(`cr') incr(`incr') maxcr(`maxcr')  `adjust'
 	
@@ -84,7 +105,7 @@ program define psecta, eclass prop(xt)
 			ereturn local cmd="psecta"
 			ereturn local varlist `varlist'
 			ereturn local cmdline psecta `cmdline'
-			
+			qui keep if `dataflag'==1
 		    exit
 	}
 
@@ -156,7 +177,7 @@ program define psecta, eclass prop(xt)
     ereturn local cmd="psecta"
     ereturn local varlist `varlist'
 	ereturn local cmdline psecta `cmdline'
-
+	qui keep if `dataflag'==1
  
 
  end
@@ -219,8 +240,8 @@ program define getcluster, eclass
 	qui tab `time', nofreq
 	local T=r(r)
     
-    //tempvar id2 
-	//egen `id2'=group(`id')
+    tempvar id2 
+	egen `id2'=group(`id') //contineous id
 	   
 	tempvar _club
 	qui gen `_club'=.
@@ -228,7 +249,7 @@ program define getcluster, eclass
 	//test whether it is convergent for the whole sample
 	// 2017-7-3
 	qui logtreg `varlist', kq(`kq') 
-	if e(tstat)>-1.65 {
+	if (e(tstat)>-1.65 & e(tstat)!=.){
 		qui replace `_club'=1
 	}
 
@@ -238,7 +259,7 @@ program define getcluster, eclass
 		qui putmata vlx=(`varlist'),replace
 		mata: id3=1::`N'
 		mata: XX=id3,_vec2mat(vlx,`N',`T')
-		qui putmata id2=(`id'),replace
+		qui putmata id2=(`id2'),replace
 		
 		mata:res=_getcluster(id2,id3,XX,`cr',`kq',`adj',`incr',`maxcr',`fr',"`_club'")
 		//mata: st_matrix("club",res)
@@ -315,7 +336,7 @@ program define getclusterstata, eclass
 	qui gen `_club'=.
 
 	qui logtreg `varlist', kq(`kq') nomata
-	if e(tstat)>-1.65 {
+	if (e(tstat)>-1.65 & e(tstat)!=.){
 		qui replace `_club'=1
 		qui sort `time' `_club' `id'
 		qui mkmat `_club' `id' if `time'==`time'[1]& !missing(`_club' ), ///
@@ -365,7 +386,7 @@ program define getclusterstata, eclass
 		qui logtreg `varlist' if missing(`_club'), kq(`kq') nomata
 		local tstat=e(tstat)
 		
-		if (`tstat'>-1.65) {
+		if (`tstat'>-1.65 & `tstat'!=.) {
 		   qui replace `_club'=2 if missing(`_club')
 		   qui sort `time' `_club' `id'
 		   qui mkmat `_club' `id' if `time'==`time'[1]& !missing(`_club' ), ///
@@ -405,6 +426,7 @@ program define getclusterstata, eclass
 					   
 			           *qui replace `_club'=`jt' if inlist(`id',`clubmember')
 						mat `clubmember'=e(clubmember)
+						//mat list `clubmember'
 						local nclub=rowsof(`clubmember')
 						forvalues q=1/`nclub' {
 							qui replace `_club'=`jt' if `id'==`clubmember'[`q',1]
@@ -428,12 +450,13 @@ program define getclusterstata, eclass
 			           qui logtreg `varlist' if missing(`_club'), kq(`kq') nomata
 
 			           local tstat=e(tstat)
-		
-						if (`tstat'>-1.65) {
+						//disp `tstat'
+						if (`tstat'>-1.65 & `tstat'!=.) {
 						   qui replace `_club'=`jt'+1 if missing(`_club')
 						   qui sort `time' `_club' `id'
 						   qui mkmat `_club' `id' if `time'==`time'[1]& !missing(`_club' ), ///
-			                     mat(club) 
+			                     mat(club)
+			               //mat list club 
 						   mat colnames club = "Club" "panel_id"
 						   ereturn local cmd="getclusterstata"
 						   ereturn matrix club=club
@@ -447,6 +470,7 @@ program define getclusterstata, eclass
 			  qui sort `time' `_club' `id'
 			  qui mkmat `_club' `id' if `time'==`time'[1]& !missing(`_club' ), ///
 			                mat(club) 
+
 			  mat colnames club = "Club" "panel_id"
 			  if ("`gen'"!="") qui gen `gen'=`_club'
 
@@ -548,7 +572,7 @@ program define findclubstata,eclass
 	scalar `tt'=-100 
 	
 	while (`tt'<=-1.65 &`k'<`mid') {
-			qui logtreg `varlist' if `_order'==`k'| `_order'==`k'+1, kq(`kq') nomata
+			cap logtreg `varlist' if `_order'==`k'| `_order'==`k'+1, kq(`kq') nomata
 			scalar `tt'=e(tstat)
 			local k=`k'+1
 	
@@ -561,6 +585,14 @@ program define findclubstata,eclass
 	*/
 	// If the above loop exits with failing to find the first two successive countries with tt>-1.65
 	// No convergent groups exist, program ends.
+
+	if (`tt'==.){
+			//disp as red "Exit: No convergent groups are found."
+			ereturn scalar flag=0   // record whether convergent club exists
+
+			restore
+			exit 
+		}
 
 	if (`k'>=`mid'&`tt'<=-1.65){
 			//disp as red "Exit: No convergent groups are found."
@@ -578,8 +610,9 @@ program define findclubstata,eclass
 			local idlist `=`k'-1' `k'
 			scalar `tmax'=`tt' 
 			local tmaxindex `=`k'-1' `k'  // record k for which yields the hihgest value of tt
-			while (`j'<=`mid' & `tt'>-1.65){
-
+			// take care that `tt' might be missing; Stata regards that .>= any values. 
+			//while (`j'<=`mid' & `tt'>-1.65){
+			while (`j'<=`mid' & `tt'>-1.65 ){
 
 				local idlist `idlist' `j'
 				qui cap drop `inarg'
@@ -587,9 +620,11 @@ program define findclubstata,eclass
 			
 				qui logtreg `varlist' if `inarg'==1, kq(`kq') nomata
 				scalar `tt'=e(tstat)
-			    
+			    if (`tt'==.){
+			    	continue,break
+			    }
 			    // record the j when the maixmum t statistic is obtainded
-				if `tmax'<=`tt'{
+				if (`tmax'<=`tt' ){
 						scalar `tmax'=`tt'
 						local tmaxindex `idlist'
 					}
@@ -623,7 +658,7 @@ program define findclubstata,eclass
 
 
 				//record i such that the t statistic is greater than cr
-				if `tt'>`cr' {
+				if (`tt'>`cr' & `tt'!=. ){
 					
 					local initialclub `initialclub' `i'
 					}
@@ -655,7 +690,7 @@ program define findclubstata,eclass
 						    qui egen `inarg'=anymatch(`_order'), values(`inarg2')
 						    qui logtreg `varlist' if `inarg'==1, kq(`kq') nomata
 						    scalar `tt'=e(tstat)
-						    if `tt'>`cr' {
+						    if (`tt'>`cr'&`tt'!=.) {
 							   local initialclub `initialclub' `i'
 							}
 						}
