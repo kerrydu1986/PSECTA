@@ -25,7 +25,7 @@
 {synopt :{opt noprtlogtreg}}suppress the estimation results of the logtreg{p_end}
 {synoptline}
 {p 4 6 2}
-A panel variable and a time variable must be specified. Use {helpb xtset}. The unbalanced panel data must be rectangularized. Use {helpb fillin}.{p_end}
+A panel variable and a time variable must be specified. Use {helpb xtset}. The unbalanced panel data would be rectangularized temporally by  {helpb tsfill}. But note that observations at the starting period for all individuals must not be missing.{p_end}
 
 {marker description}{...}
 {title:Description}

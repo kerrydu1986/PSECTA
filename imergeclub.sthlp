@@ -9,7 +9,7 @@
 
 {p 8 16 2}
 {opt imergeclub} {varname}  {ifin} 
-   {cmd:, club(varname) kq(#)} [name(varname str) {cmdab:g:en(newvar)} imore {cmdab:md:iv} {cmdab:nom:ata}  {cmdab:noprt:logtreg}]
+   {cmd:, club(varname) kq(#)} [name(varname) {cmdab:g:en(newvar)} imore {cmdab:md:iv} {cmdab:nom:ata}  {cmdab:noprt:logtreg}]
 
 {synoptset 20 tabbed}{...}
 {synopthdr}
